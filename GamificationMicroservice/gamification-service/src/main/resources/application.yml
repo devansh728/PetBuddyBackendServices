@@ -1,0 +1,107 @@
+server:
+  port: ${SERVER_PORT:8086}
+
+spring:
+  application:
+    name: gamification-service
+
+  # Database Configuration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/gamification_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL_ENABLED:false}
+
+  # Cache Configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000 # 5 minutes in milliseconds
+
+# gRPC Server Configuration
+grpc:
+  server:
+    port: 9090
+  client:
+    user-profile-service:
+      address: static://${USER_PROFILE_SERVICE_HOST:localhost}:9091
+      negotiationType: plaintext
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Gamification Configuration
+gamification:
+  levels:
+    - level: 1
+      title: "Pet Newbie"
+      minPoints: 0
+      maxPoints: 99
+    - level: 2
+      title: "Pet Lover"
+      minPoints: 100
+      maxPoints: 299
+    - level: 3
+      title: "Pet Expert"
+      minPoints: 300
+      maxPoints: 599
+    - level: 4
+      title: "Pet Guardian"
+      minPoints: 600
+      maxPoints: 999
+    - level: 5
+      title: "Pet Champion"
+      minPoints: 1000
+      maxPoints: 1999
+    - level: 6
+      title: "Pet Legend"
+      minPoints: 2000
+      maxPoints: 999999
+
+  leaderboard:
+    cache-ttl-seconds: 300 # 5 minutes
+    default-limit: 50
+
+# Logging
+logging:
+  level:
+    com.petbuddy.gamification: DEBUG
+    org.springframework.cache: DEBUG

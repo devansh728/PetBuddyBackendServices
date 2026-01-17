@@ -1,0 +1,226 @@
+spring:
+  application:
+    name: interaction-service
+
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:interaction_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:password123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: InteractionHikariPool
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      database: 0
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 2000ms
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:password123}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL_ENABLED:false}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    connection-timeout: 30000
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000
+        max-attempts: 3
+        max-interval: 10000
+        multiplier: 2
+
+  # Cache Configuration
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=5m,recordStats
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8084}
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 50
+    connection-timeout: 60000
+    max-connections: 10000
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+# Interaction Service Configuration
+interaction:
+  cache:
+    like-ttl: 3600 # 1 hour in seconds
+    comment-ttl: 1800 # 30 minutes in seconds
+    metrics-ttl: 600 # 10 minutes in seconds
+  rate-limit:
+    likes-per-minute: 100
+    comments-per-minute: 50
+  websocket:
+    max-connections: 10000
+    heartbeat-interval: 30000 # 30 seconds in milliseconds
+    message-batch-interval: 100 # 100ms
+  reconciliation:
+    enabled: true
+    cron: "0 */15 * * * *" # Every 15 minutes
+
+# RabbitMQ Queues and Routing
+rabbitmq:
+  exchange:
+    name: interaction.events
+    type: topic
+    durable: true
+  queues:
+    like-events: like.events
+    comment-events: comment.events
+    metrics-events: metrics.events
+  routing-keys:
+    like-created: like.created
+    like-deleted: like.deleted
+    comment-added: comment.added
+    comment-deleted: comment.deleted
+    comment-updated: comment.updated
+    metrics-updated: metrics.updated
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+    instances:
+      postService:
+        baseConfig: default
+      feedService:
+        baseConfig: default
+
+  ratelimiter:
+    configs:
+      default:
+        registerHealthIndicator: true
+        limitForPeriod: 100
+        limitRefreshPeriod: 60s
+        timeoutDuration: 500ms
+    instances:
+      likeService:
+        limitForPeriod: 100
+        limitRefreshPeriod: 60s
+      commentService:
+        limitForPeriod: 50
+        limitRefreshPeriod: 60s
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+    instances:
+      postService:
+        baseConfig: default
+      feedService:
+        baseConfig: default
+
+# Actuator & Monitoring Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    tags:
+      application: ${spring.application.name}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.petbuddy.interaction: DEBUG
+    org.springframework.web: INFO
+    org.springframework.data: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    io.lettuce.core: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/interaction-service.log
+    max-size: 10MB
+    max-history: 30
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  show-actuator: true

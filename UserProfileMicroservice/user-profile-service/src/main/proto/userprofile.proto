@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package com.petbuddy.userprofile;
+
+option java_package = "com.petbuddy.user_profile_service.grpc";
+option java_outer_classname = "UserProfileProto";
+option java_multiple_files = true;
+
+// UserProfile gRPC Service - exposes user info for other microservices
+service UserProfileGrpcService {
+    // Get basic user info (for enriching posts, comments, etc.)
+    rpc GetUserInfo(GetUserInfoRequest) returns (UserInfoResponse);
+    
+    // Batch get user info for multiple users
+    rpc BatchGetUserInfo(BatchGetUserInfoRequest) returns (BatchGetUserInfoResponse);
+}
+
+message GetUserInfoRequest {
+    string user_id = 1;
+}
+
+message UserInfoResponse {
+    string user_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string avatar_url = 4;
+    string bio = 5;
+    int64 followers_count = 6;
+}
+
+message BatchGetUserInfoRequest {
+    repeated string user_ids = 1;
+}
+
+message BatchGetUserInfoResponse {
+    repeated UserInfoResponse users = 1;
+}

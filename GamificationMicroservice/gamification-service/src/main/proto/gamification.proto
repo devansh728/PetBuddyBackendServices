@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package com.petbuddy.gamification;
+
+option java_package = "com.petbuddy.gamification.grpc";
+option java_outer_classname = "GamificationProto";
+option java_multiple_files = true;
+
+// Gamification gRPC Service
+service GamificationGrpcService {
+    // Get user's gamification state
+    rpc GetUserGamification(GetUserGamificationRequest) returns (GamificationState);
+    
+    // Add points for an action
+    rpc AddPoints(AddPointsGrpcRequest) returns (AddPointsGrpcResponse);
+    
+    // Get leaderboard
+    rpc GetLeaderboard(GetLeaderboardRequest) returns (LeaderboardResponse);
+    
+    // Get user's basic info for enrichment
+    rpc GetUserInfo(GetUserInfoRequest) returns (UserInfo);
+}
+
+message GetUserGamificationRequest {
+    string user_id = 1;
+}
+
+message GamificationState {
+    string user_id = 1;
+    int32 total_points = 2;
+    int32 current_level = 3;
+    string level_title = 4;
+    int32 progress_to_next_level = 5;
+    int32 login_streak = 6;
+    repeated string badge_ids = 7;
+    WeeklyStats weekly_stats = 8;
+    int32 rank = 9;
+}
+
+message WeeklyStats {
+    int32 posts = 1;
+    int32 likes = 2;
+    int32 comments = 3;
+    int32 purchases = 4;
+    int32 donations = 5;
+    int32 ai_questions = 6;
+}
+
+message AddPointsGrpcRequest {
+    string user_id = 1;
+    string action = 2;
+    int32 custom_points = 3;  // 0 means use default
+    string reference_id = 4;
+}
+
+message AddPointsGrpcResponse {
+    int32 points_awarded = 1;
+    int32 total_points = 2;
+    int32 new_level = 3;
+    string level_title = 4;
+    bool leveled_up = 5;
+    string badge_unlocked = 6;
+}
+
+message GetLeaderboardRequest {
+    int32 limit = 1;
+}
+
+message LeaderboardResponse {
+    repeated LeaderboardEntry entries = 1;
+}
+
+message LeaderboardEntry {
+    string user_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string avatar_url = 4;
+    int32 total_points = 5;
+    int32 level = 6;
+    string level_title = 7;
+    int32 rank = 8;
+}
+
+message GetUserInfoRequest {
+    string user_id = 1;
+}
+
+message UserInfo {
+    string user_id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string avatar_url = 4;
+    int32 total_points = 5;
+    int32 level = 6;
+    string level_title = 7;
+}

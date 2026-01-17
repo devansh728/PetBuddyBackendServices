@@ -1,0 +1,161 @@
+# ===========================================
+# Environment & Secrets
+# ===========================================
+.env
+.env.*
+!.env.example
+*.env
+secrets.yaml
+**/secrets.yaml
+
+# ===========================================
+# Java / Gradle
+# ===========================================
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.log
+*.ctxt
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Gradle wrapper (keep these)
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# ===========================================
+# IDE - IntelliJ IDEA
+# ===========================================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# ===========================================
+# IDE - Eclipse
+# ===========================================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# ===========================================
+# IDE - VS Code
+# ===========================================
+.vscode/
+*.code-workspace
+
+# ===========================================
+# IDE - NetBeans
+# ===========================================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ===========================================
+# macOS
+# ===========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ===========================================
+# Windows
+# ===========================================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# ===========================================
+# Linux
+# ===========================================
+*~
+.fuse_hidden*
+.nfs*
+
+# ===========================================
+# Logs
+# ===========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================================
+# Docker
+# ===========================================
+.docker/
+
+# ===========================================
+# Kubernetes
+# ===========================================
+*.kubeconfig
+kubeconfig
+
+# ===========================================
+# Node.js (React Native)
+# ===========================================
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnp/
+.pnp.js
+
+# React Native
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Metro
+.metro-health-check*
+
+# ===========================================
+# Testing
+# ===========================================
+coverage/
+*.lcov
+.nyc_output/
+
+# ===========================================
+# Misc
+# ===========================================
+*.bak
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+tmp/
+temp/
+*.env

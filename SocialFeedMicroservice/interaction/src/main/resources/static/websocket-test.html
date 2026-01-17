@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test Client - Interaction Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .messages {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #007bff;
+            background: white;
+            border-radius: 4px;
+        }
+        .message.like {
+            border-left-color: #28a745;
+        }
+        .message.comment {
+            border-left-color: #17a2b8;
+        }
+        .message.error {
+            border-left-color: #dc3545;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔌 WebSocket Test Client - Interaction Service</h1>
+
+    <div class="container">
+        <h2>Connection</h2>
+        <div id="status" class="status disconnected">Disconnected</div>
+        <input type="text" id="userId" placeholder="User ID (e.g., 123)" value="123">
+        <input type="text" id="wsUrl" placeholder="WebSocket URL" value="ws://localhost:8084/ws/interactions">
+        <button id="connectBtn" onclick="connect()">Connect</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+    </div>
+
+    <div class="container">
+        <h2>Subscriptions</h2>
+        <input type="number" id="postId" placeholder="Post ID" value="100">
+        <button id="subscribeBtn" onclick="subscribe()" disabled>Subscribe to Post</button>
+        <button id="unsubscribeBtn" onclick="unsubscribe()" disabled>Unsubscribe</button>
+        <button onclick="ping()" disabled id="pingBtn">Send Ping</button>
+    </div>
+
+    <div class="container">
+        <h2>Messages</h2>
+        <button onclick="clearMessages()">Clear Messages</button>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageCount = 0;
+
+        function connect() {
+            const userId = document.getElementById('userId').value;
+            const wsUrl = document.getElementById('wsUrl').value + '?userId=' + userId;
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function() {
+                    updateStatus('connected');
+                    addMessage('Connected to WebSocket', 'system');
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = false;
+                    document.getElementById('subscribeBtn').disabled = false;
+                    document.getElementById('unsubscribeBtn').disabled = false;
+                    document.getElementById('pingBtn').disabled = false;
+                };
+
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log('Received:', data);
+
+                    if (data.event) {
+                        if (data.event.startsWith('like:')) {
+                            addMessage(formatLikeMessage(data), 'like');
+                        } else if (data.event.startsWith('comment:')) {
+                            addMessage(formatCommentMessage(data), 'comment');
+                        } else {
+                            addMessage(JSON.stringify(data, null, 2), 'system');
+                        }
+                    } else {
+                        addMessage(JSON.stringify(data, null, 2), 'system');
+                    }
+                };
+
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    addMessage('WebSocket error: ' + error.message, 'error');
+                };
+
+                ws.onclose = function() {
+                    updateStatus('disconnected');
+                    addMessage('Disconnected from WebSocket', 'system');
+                    document.getElementById('connectBtn').disabled = false;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('subscribeBtn').disabled = true;
+                    document.getElementById('unsubscribeBtn').disabled = true;
+                    document.getElementById('pingBtn').disabled = true;
+                };
+
+            } catch (error) {
+                addMessage('Connection error: ' + error.message, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function subscribe() {
+            const postId = parseInt(document.getElementById('postId').value);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'SUBSCRIBE_POST',
+                    postId: postId
+                }));
+                addMessage('Subscribing to post ' + postId, 'system');
+            }
+        }
+
+        function unsubscribe() {
+            const postId = parseInt(document.getElementById('postId').value);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'UNSUBSCRIBE_POST',
+                    postId: postId
+                }));
+                addMessage('Unsubscribing from post ' + postId, 'system');
+            }
+        }
+
+        function ping() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'PING'
+                }));
+                addMessage('Ping sent', 'system');
+            }
+        }
+
+        function formatLikeMessage(data) {
+            const action = data.event === 'like:added' ? 'liked' : 'unliked';
+            return `👍 User ${data.data.username} ${action} - Total likes: ${data.data.likeCount}`;
+        }
+
+        function formatCommentMessage(data) {
+            if (data.event === 'comment:added') {
+                return `💬 ${data.data.username}: ${data.data.commentText} - Total comments: ${data.data.commentCount}`;
+            } else {
+                return `🗑️ Comment deleted - Total comments: ${data.data.commentCount}`;
+            }
+        }
+
+        function addMessage(text, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `
+                <span class="timestamp">[${timestamp}]</span><br>
+                ${text}
+            `;
+
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+            messageCount++;
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+            messageCount = 0;
+        }
+
+        function updateStatus(status) {
+            const statusDiv = document.getElementById('status');
+            if (status === 'connected') {
+                statusDiv.textContent = 'Connected ✅';
+                statusDiv.className = 'status connected';
+            } else {
+                statusDiv.textContent = 'Disconnected ❌';
+                statusDiv.className = 'status disconnected';
+            }
+        }
+    </script>
+</body>
+</html>
+

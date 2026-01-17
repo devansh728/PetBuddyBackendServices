@@ -1,0 +1,65 @@
+# Prometheus Configuration for PetBuddy Microservices
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: []
+
+# Rule files (optional)
+# rule_files:
+#   - "alerts.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Auth Service
+  - job_name: "auth-service"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["auth-service:8081"]
+    scrape_interval: 30s
+
+  # User Profile Service
+  - job_name: "user-profile-service"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["user-profile-service:8082"]
+    scrape_interval: 30s
+
+  # Feed Distribution Service
+  - job_name: "feed-distribution-service"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["feed-distribution-service:8083"]
+    scrape_interval: 30s
+
+  # Interaction Service
+  - job_name: "interaction-service"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["interaction-service:8084"]
+    scrape_interval: 30s
+
+  # Social Feed Service
+  - job_name: "social-feed-service"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["social-feed-service:8085"]
+    scrape_interval: 30s
+
+  # Redis metrics (requires redis-exporter)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # PostgreSQL metrics (requires postgres-exporter)
+  # - job_name: 'postgresql'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
