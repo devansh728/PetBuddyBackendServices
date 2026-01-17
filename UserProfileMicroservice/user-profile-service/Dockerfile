@@ -1,7 +1,8 @@
 # Multi-stage Dockerfile for User Profile Service
 # Optimized for low memory usage with Java 21
 
-FROM gradle:8.5-jdk21-alpine AS builder
+# Use full JDK for building (not alpine) to avoid protoc issues
+FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 
@@ -12,7 +13,10 @@ COPY gradle ./gradle
 # Download dependencies (cached layer)
 RUN gradle dependencies --no-daemon || true
 
-# Copy source code
+# Copy proto files first (if any)
+COPY src/main/proto ./src/main/proto
+
+# Copy remaining source code
 COPY src ./src
 
 # Build application (skip tests for faster builds)
@@ -35,8 +39,8 @@ USER spring:spring
 # Copy jar from builder stage
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Expose service port
-EXPOSE 8082
+# Expose service port and gRPC port
+EXPOSE 8082 9091
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

@@ -30,6 +30,10 @@ build/
 !gradle-wrapper.jar
 !gradle-wrapper.properties
 
+# Local gradle properties (may contain local paths)
+**/gradle.properties
+!gradle/wrapper/gradle.properties
+
 # ===========================================
 # IDE - IntelliJ IDEA
 # ===========================================

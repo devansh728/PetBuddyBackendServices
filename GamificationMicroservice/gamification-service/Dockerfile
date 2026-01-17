@@ -1,5 +1,6 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS builder
+# Use full JDK (not alpine) for gRPC/protobuf compilation
+FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 
@@ -13,9 +14,12 @@ COPY settings.gradle .
 RUN chmod +x ./gradlew
 
 # Download dependencies first (better layer caching)
-RUN ./gradlew dependencies --no-daemon
+RUN ./gradlew dependencies --no-daemon || true
 
-# Copy source code
+# Copy proto files first
+COPY src/main/proto ./src/main/proto
+
+# Copy remaining source code
 COPY src src
 
 # Build the application
@@ -25,6 +29,9 @@ RUN ./gradlew bootJar --no-daemon -x test
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
 # Add non-root user for security
 RUN addgroup -g 1001 -S appgroup && \
@@ -45,6 +52,10 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:+UseG1GC \
     -XX:+OptimizeStringConcat \
     -Djava.security.egd=file:/dev/./urandom"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8086/actuator/health || exit 1
 
 EXPOSE 8086 9090
 

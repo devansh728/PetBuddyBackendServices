@@ -1,7 +1,8 @@
 # Multi-stage Dockerfile for Social Feed Service
 # Optimized for low memory usage with Java 21
 
-FROM gradle:8.5-jdk21-alpine AS builder
+# Use full JDK for building (not alpine) to avoid protoc issues
+FROM gradle:8.5-jdk21 AS builder
 
 WORKDIR /app
 
@@ -12,7 +13,10 @@ COPY gradle ./gradle
 # Download dependencies (cached layer)
 RUN gradle dependencies --no-daemon || true
 
-# Copy source code
+# Copy proto files first (if any)
+COPY src/main/proto ./src/main/proto
+
+# Copy remaining source code
 COPY src ./src
 
 # Build application (skip tests for faster builds)
